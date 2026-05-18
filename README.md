@@ -15,7 +15,7 @@ Both keys have free tiers. Without them the server still boots but the AI and we
 ```powershell
 git clone https://github.com/SnehalJainn/skyauth.git
 cd skyauth
-pip install fastapi uvicorn numpy requests pydantic opencv-python Pillow scikit-learn
+pip install -r requirements.txt
 ```
 
 ## Configure API keys

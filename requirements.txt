@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+pydantic
+requests
+numpy
+opencv-python
+Pillow
+scikit-learn
