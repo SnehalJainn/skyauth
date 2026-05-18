@@ -31,30 +31,40 @@ $env:OPENWEATHER_API_KEY = "your-openweather-key"
 # $env:GEMINI_MODEL = "gemini-2.0-flash"
 ```
 
-On Windows the console may not render emoji characters in the startup banner. If you see a `UnicodeEncodeError`, force UTF-8 stdio:
-
-```powershell
-$env:PYTHONIOENCODING = "utf-8"
-$env:PYTHONUTF8 = "1"
-```
-
 ## Run
 
 ```powershell
-python server.py
+python main.py
 ```
 
 The server prints something like:
 
 ```
-Local:   http://localhost:8000
-Mobile:  http://<your-LAN-IP>:8000
-API docs: http://<your-LAN-IP>:8000/docs
+Local:    http://localhost:8000
+LAN:      http://<your-LAN-IP>:8000
+API docs: http://localhost:8000/docs
 ```
 
 Open `http://localhost:8000` in a browser for the frontend, or `/docs` for the interactive Swagger UI.
 
-To test from your phone on the same Wi-Fi, use the `Mobile` URL the server prints. You may need to allow Python through Windows Firewall the first time.
+To test from your phone on the same Wi-Fi, use the `LAN` URL the server prints. You may need to allow Python through Windows Firewall the first time.
+
+## Project layout
+
+```
+.
+├── main.py              # uvicorn entrypoint and app wiring
+├── skyauth/
+│   ├── config.py        # env vars, paths, logger, in-memory state
+│   ├── solar.py         # NOAA sun-position calculations
+│   ├── image_analysis.py# OpenCV sun detection and fake-image scoring
+│   ├── external_apis.py # Gemini + OpenWeather HTTP clients
+│   ├── ml_model.py      # random-forest ensemble
+│   ├── models.py        # request schemas
+│   └── routes.py        # FastAPI endpoints
+└── templates/
+    └── index.html       # bundled frontend
+```
 
 ## Endpoints
 
