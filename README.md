@@ -66,6 +66,45 @@ To test from your phone on the same Wi-Fi, use the `LAN` URL the server prints. 
     └── index.html       # bundled frontend
 ```
 
+## Models and algorithms
+
+| Component | Model / algorithm | Role |
+|---|---|---|
+| Image authenticity & scene | Gemini 2.0-flash (multimodal LLM) | Classifies scene (sky / ground / indoor / screenshot), estimates sun position from visual cues, flags AI-generated content. Primary judge. |
+| Sun ground truth | NOAA General Solar Position Calculation (Spencer 1971) | Analytical azimuth and elevation from latitude, longitude, and UTC time. No external service required. |
+| Fake-image detection | OpenCV pipeline, eight weighted signals | Error-level analysis, sensor-noise floor, DFT high-frequency energy, sky-saturation uniformity, bytes-per-pixel, top-half gradient smoothness, Laplacian sharpness, and Gemini's AI probability. Fused with a weighted average; flagged when > 0.48. |
+| Final approval | Random Forest (scikit-learn, 150 trees, max depth 7) | Combines 12 normalised features into an approval probability. Approves at probability >= 0.58. |
+| Weather context | OpenWeather Current Weather API | Cloud cover and visibility relax the fake-detector's smoothness thresholds so hazy real photos are not misclassified. |
+
+## Data and features
+
+`POST /api/verify` consumes a JSON body containing:
+
+- `sky_image_base64` — JPEG sky photo, base64-encoded
+- `latitude`, `longitude` — GPS at capture time
+- `compass_heading`, `tilt_angle` — phone orientation in degrees
+- `timestamp_client` — capture time as unix seconds
+- `session_id`, `transaction_id`, `user_id` — session identifiers from `/api/initiate`
+
+The Random Forest receives twelve features, all in `[0, 1]`:
+
+| # | Feature | Source |
+|---|---|---|
+| 1 | GPS Valid | Coordinates in valid range and drift < 1 km from session origin |
+| 2 | Daytime | Solar elevation >= 3 deg at verification time |
+| 3 | Direction Match | Gemini verdict is `genuine_sun_visible` or `genuine_sun_obscured` |
+| 4 | Tilt Match | Gemini's verdict confidence / 100 |
+| 5 | Sun Detected (CV) | OpenCV brightest-blob heuristic or Gemini sees the sun |
+| 6 | Sun Position Match (CV) | Pixel-derived sun direction agrees with the solar ground truth |
+| 7 | Not Fake (ML) | 1 minus the fake-image fusion probability |
+| 8 | Gemini AI Score | Gemini's `ai_score` / 100 |
+| 9 | Timestamp Fresh | Client timestamp within 120 s of the server clock |
+| 10 | Is Sky Image (CV) | Sky-pixel ratio above 12% |
+| 11 | Gemini Sun Match | Gemini's visual sun estimate agrees with the solar ground truth |
+| 12 | Gemini No Block | Gemini did not raise a hard block (not-sky, night, or fake) |
+
+**Training data:** the Random Forest is trained on **synthetic data**, not real labelled approvals. `build_random_forest` in `skyauth/ml_model.py` draws 600 positive samples from a uniform high-feature distribution and 600 negative samples from a low-feature one, then fits the trees. This is a deliberate prototype choice: it produces a calibrated boundary without needing a labelled dataset. Replace this function with a fit on real verifications once you have logged enough of them.
+
 ## Endpoints
 
 | Method | Path | Purpose |
