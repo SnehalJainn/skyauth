@@ -115,6 +115,11 @@ The Random Forest receives twelve features, all in `[0, 1]`:
 | POST | `/api/verify` | Submit photo + sensor data for verification |
 | GET | `/api/transactions` | List recent transactions |
 
+
+## Deployed link 
+The app is live on : https://skyauth-1973.onrender.com/
+
+
 ## Notes on the free tiers
 
 - **OpenWeather:** newly created keys can take up to ~2 hours to activate. Until then you'll see `401 Unauthorized` from `api.openweathermap.org`; the server logs the failure and falls back to a degraded weather record (no crash).
